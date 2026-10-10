@@ -5,5 +5,5 @@ middleware group when the ApiProvider is enabled in config/providers.py.
 """
 
 ROUTES = [
-    # Route.get("/users", "UsersController@index"),
+    Route.get("/users", "UsersController@index"),
 ]
