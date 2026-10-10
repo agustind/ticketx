@@ -1,0 +1,27 @@
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# environment
+.env
+.env.*
+!.env.testing
+
+# database
+*.sqlite3
+
+# npm
+node_modules/
+package-lock.json
+yarn.lock
+
+# compiled assets
+storage/compiled/
+
+# editors
+.vscode/
+.idea/
+.DS_Store
