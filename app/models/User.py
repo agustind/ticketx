@@ -12,3 +12,6 @@ class User(Model, Authenticates, Authorizes, Notifiable):
     __fillable__ = ["name", "email", "password", "phone"]
     __hidden__ = ["password", "second_password", "remember_token"]
     __auth__ = "email"
+
+    def to_api(self):
+        return {"id": self.id, "name": self.name, "email": self.email}

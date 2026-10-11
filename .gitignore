@@ -16,10 +16,14 @@ venv/
 # npm
 node_modules/
 package-lock.json
+!frontend/package-lock.json
 yarn.lock
 
-# compiled assets
+# compiled assets (frontend build output)
 storage/compiled/
+
+# uploaded ticket PDFs in local dev (production uses a private bucket)
+storage/private/
 
 # editors
 .vscode/

@@ -2,5 +2,10 @@
 .env.*
 .venv
 .git
-node_modules
-__pycache__
+**/node_modules
+**/__pycache__
+# Built inside the image from frontend/
+storage/compiled
+# Local-dev ticket PDFs must never end up in an image
+storage/private
+*.sqlite3
