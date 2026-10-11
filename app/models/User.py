@@ -10,5 +10,5 @@ class User(Model, Authenticates, Authorizes, Notifiable):
     """User Model."""
 
     __fillable__ = ["name", "email", "password", "phone"]
-    __hidden__ = ["password"]
+    __hidden__ = ["password", "second_password", "remember_token"]
     __auth__ = "email"

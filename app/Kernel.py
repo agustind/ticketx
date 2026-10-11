@@ -37,6 +37,7 @@ class Kernel:
             LoadUserMiddleware,
             VerifyCsrfToken,
         ],
+        "api": [],
         "auth": [AuthenticationMiddleware],
         "throttle": [ThrottleRequestsMiddleware],
     }

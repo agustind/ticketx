@@ -1,0 +1,8 @@
+{
+  "name": "ticketex",
+  "private": true,
+  "description": "Node tooling for Railway infrastructure-as-code (.railway/railway.ts) only.",
+  "devDependencies": {
+    "railway": "^3.13.1"
+  }
+}
