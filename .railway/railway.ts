@@ -16,8 +16,9 @@ export default defineRailway((ctx) => {
     healthcheck: "/health",
     healthcheckTimeout: 60,
     regions: { [region]: 1 },
-    // Railway-generated public domain; APP_URL below resolves to it.
-    networking: { serviceDomains: { "ticketex-production.up.railway.app": {} } },
+    // Railway-generated public domain (assigned on first apply; the name
+    // "ticketex-production" was already taken by another Railway user).
+    networking: { serviceDomains: { "web-production-cf06f0.up.railway.app": {} } },
     env: {
       APP_NAME: "ticketex",
       APP_ENV: ctx.environment,
