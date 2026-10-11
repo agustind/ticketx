@@ -1,11 +1,7 @@
-import hashlib
-import io
 import json
 import uuid
 
 import pendulum
-from pypdf import PdfReader
-from pypdf.errors import PdfReadError
 from masonite.configuration import config
 from masonite.controllers import Controller
 from masonite.request import Request
@@ -15,6 +11,7 @@ from app.models.Event import Event
 from app.models.Listing import Listing
 from app.services.api import ApiError, api, find_or_404, require_user
 from app.services.marketplace import match_event, parse_starts_at
+from app.services.ticket_files import EXTENSIONS, validated_ticket_file
 from app.services.ticket_reader import TicketDetails, TicketReaderUnavailable, read_ticket
 from app.services.ticket_storage import TicketStorage
 
@@ -22,9 +19,12 @@ from app.services.ticket_storage import TicketStorage
 ACTIVE = ["draft", "listed", "reserved", "sold"]
 
 
-def pdf_response(response, content, filename):
-    response.header("Content-Type", "application/pdf")
-    response.header("Content-Disposition", f'attachment; filename="{filename}"')
+def ticket_file_response(response, listing, name):
+    """Send the stored ticket file as a download (never rendered inline)."""
+    content = TicketStorage().get(listing.pdf_key)
+    file_type = listing.file_type or "application/pdf"
+    response.header("Content-Type", file_type)
+    response.header("Content-Disposition", f'attachment; filename="{name}.{EXTENSIONS[file_type]}"')
     response.header("Cache-Control", "private, no-store")
     response.header("X-Content-Type-Options", "nosniff")
     return response.view(content)
@@ -40,8 +40,8 @@ class ListingsController(Controller):
         if recent >= config("tickets.uploads_per_hour"):
             raise ApiError(429, "You've uploaded a lot of tickets. Try again in an hour.")
 
-        content = self._validated_pdf(request.input("file"))
-        digest = hashlib.sha256(content).hexdigest()
+        ticket_file = validated_ticket_file(request.input("file"))
+        digest = ticket_file.sha256
 
         existing = Listing.where("pdf_sha256", digest).first()
         if existing:
@@ -51,7 +51,7 @@ class ListingsController(Controller):
             existing.delete()
 
         try:
-            details = read_ticket(content)
+            details = read_ticket(*ticket_file.for_reader())
         except TicketReaderUnavailable:
             raise ApiError(503, "We can't read tickets right now. Please try again in a few minutes.")
         except ValueError as e:
@@ -65,8 +65,8 @@ class ListingsController(Controller):
         if barcode and Listing.where("barcode", barcode).where_in("status", ACTIVE).first():
             raise ApiError(422, "This ticket is already on ticketex.", {"file": "Already listed."})
 
-        key = f"{user.id}/{uuid.uuid4().hex}.pdf"
-        TicketStorage().put(key, content)
+        key = f"{user.id}/{uuid.uuid4().hex}.{ticket_file.extension}"
+        TicketStorage().put(key, ticket_file.content, ticket_file.media_type)
 
         face_value = details.face_value_cents if (details.face_value_cents or 0) > 0 else None
         currency = (details.currency or "EUR").upper()
@@ -83,6 +83,7 @@ class ListingsController(Controller):
                 "currency": currency if len(currency) == 3 else "EUR",
                 "pdf_key": key,
                 "pdf_sha256": digest,
+                "file_type": ticket_file.media_type,
                 "barcode": barcode,
                 "extraction": details.model_dump_json(),
             }
@@ -164,12 +165,12 @@ class ListingsController(Controller):
         return response.json({"listing": Listing.find(listing.id).to_api(user)})
 
     @api
-    def pdf(self, request: Request, response: Response, id: str):
+    def file(self, request: Request, response: Response, id: str):
         user = require_user(request)
         listing = self._own_listing(user, id)
         if listing.status == "cancelled":
             raise ApiError(404, "This ticket was removed.")
-        return pdf_response(response, TicketStorage().get(listing.pdf_key), f"ticket-{listing.id}.pdf")
+        return ticket_file_response(response, listing, f"ticket-{listing.id}")
 
     @api
     def mine(self, request: Request, response: Response):
@@ -189,27 +190,6 @@ class ListingsController(Controller):
             # Same answer as "missing" so ids of other people's tickets aren't confirmed.
             raise ApiError(404, "Ticket not found.")
         return listing
-
-    def _validated_pdf(self, upload):
-        if isinstance(upload, list):
-            upload = upload[0] if upload else None
-        if upload is None or not hasattr(upload, "get_content"):
-            raise ApiError(422, "Choose a PDF to upload.", {"file": "Choose a PDF to upload."})
-        content = upload.get_content()
-        if len(content) > config("tickets.max_pdf_bytes"):
-            raise ApiError(422, "The PDF must be 10 MB or smaller.", {"file": "Max 10 MB."})
-        if not content.startswith(b"%PDF"):
-            raise ApiError(422, "Only PDF tickets are supported.", {"file": "Not a PDF."})
-        try:
-            reader = PdfReader(io.BytesIO(content))
-            if reader.is_encrypted:
-                raise ApiError(422, "Password-protected PDFs aren't supported.", {"file": "PDF is encrypted."})
-            pages = len(reader.pages)
-        except PdfReadError:
-            raise ApiError(422, "We couldn't open this PDF.", {"file": "Unreadable PDF."})
-        if pages > config("tickets.max_pdf_pages"):
-            raise ApiError(422, "Upload one ticket at a time (max 10 pages).", {"file": "Too many pages."})
-        return content
 
     def _event_from_input(self, request, user, errors):
         event_id = request.input("event_id")

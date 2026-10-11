@@ -117,6 +117,6 @@ export const api = {
 }
 
 export const urls = {
-  listingPdf: (id: number) => `/api/listings/${id}/pdf`,
+  listingFile: (id: number) => `/api/listings/${id}/file`,
   orderTicket: (id: number) => `/api/orders/${id}/ticket`,
 }

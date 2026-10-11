@@ -4,13 +4,12 @@ from masonite.request import Request
 from masonite.response import Response
 
 from config.database import DB
-from app.controllers.ListingsController import pdf_response
+from app.controllers.ListingsController import ticket_file_response
 from app.models.Listing import Listing
 from app.models.Order import RESERVATION_MINUTES, Order
 from app.services.api import ApiError, api, find_or_404, require_user
 from app.services.marketplace import release_expired_reservations
 from app.services.payments import payment_provider
-from app.services.ticket_storage import TicketStorage
 
 
 class OrdersController(Controller):
@@ -95,8 +94,7 @@ class OrdersController(Controller):
         order = self._own_order(user, id)
         if order.status != "paid":
             raise ApiError(403, "The ticket is available once the order is paid.")
-        listing = order.listing
-        return pdf_response(response, TicketStorage().get(listing.pdf_key), f"ticket-{order.id}.pdf")
+        return ticket_file_response(response, order.listing, f"ticket-{order.id}")
 
     def _own_order(self, user, id):
         order = find_or_404(Order, id, "Order not found.")

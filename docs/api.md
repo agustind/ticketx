@@ -24,6 +24,7 @@ type Listing = { id: number; status: "draft" | "listed" | "reserved" | "sold" | 
                  event: Event | null; ticket_type: string | null; seat: string | null;
                  face_value_cents: number | null; face_value_locked: boolean;
                  price_cents: number | null; max_price_cents: number | null; currency: string;
+                 file_type: "application/pdf" | "image/jpeg" | "image/png" | "image/webp";
                  seller_name: string; is_mine: boolean; created_at: string };
 type Extraction = { is_ticket: boolean; event_name: string | null; starts_at: string | null;
                     venue: string | null; city: string | null; ticket_type: string | null;
@@ -44,21 +45,23 @@ type Order   = { id: number; status: "pending" | "paid" | "expired" | "cancelled
 | POST | `/api/auth/logout` | user | – | `{ ok: true }` |
 | GET | `/api/events?q=` | – | – | `{ events: Event[] }` upcoming first, then undated |
 | GET | `/api/events/{slug}` | – | – | `{ event: Event, listings: Listing[] }` only `listed`, cheapest first |
-| POST | `/api/listings` | user | multipart `file` (PDF, ≤ 10 MB) | 201 `{ listing: Listing, extraction: Extraction, matched_event: Event \| null }` |
+| POST | `/api/listings` | user | multipart `file` (PDF, JPG, PNG or WebP, ≤ 10 MB) | 201 `{ listing: Listing, extraction: Extraction, matched_event: Event \| null }` |
 | GET | `/api/listings/{id}` | seller | – | `{ listing, extraction: Extraction \| null, matched_event: Event \| null }` (for reloading the confirm step) |
 | POST | `/api/listings/{id}/publish` | seller | `{ event_id?, event?: { name, starts_at, venue, city }, ticket_type, seat, face_value_cents, price_cents }` | `{ listing }` |
 | DELETE | `/api/listings/{id}` | seller | – | `{ listing }` (cancelled; only draft/listed) |
-| GET | `/api/listings/{id}/pdf` | seller | – | the PDF |
+| GET | `/api/listings/{id}/file` | seller | – | the ticket file (download) |
 | GET | `/api/me/listings` | user | – | `{ listings: Listing[] }` |
 | POST | `/api/orders` | user | `{ listing_id }` | 201 `{ order }` reserves the ticket for 10 minutes |
 | GET | `/api/orders/{id}` | buyer | – | `{ order }` |
 | POST | `/api/orders/{id}/pay` | buyer | – | `{ order }` simulated payment; listing becomes `sold` |
 | GET | `/api/me/orders` | user | – | `{ orders: Order[] }` |
-| GET | `/api/orders/{id}/ticket` | buyer, paid | – | the PDF |
+| GET | `/api/orders/{id}/ticket` | buyer, paid | – | the ticket file (download) |
 
 ## Rules
 
-- Upload: the PDF is read by Claude. Not a ticket → 422. Same file uploaded twice → 422.
+- Upload: a PDF, or a photo / screenshot (JPG, PNG, WebP), read by Claude. Not a ticket → 422.
+  Same file uploaded twice → 422. The type is detected from the file contents, not its name.
+  Images are re-saved without metadata (EXIF/GPS) before storing; the buyer gets that copy.
 - Publish: either `event_id` (an existing event, usually `matched_event`) or `event` (creates one).
   `price_cents` must be > 0 and ≤ `max_price_cents` = 120% of face value.
   If the face value was read from the ticket, it is locked (`face_value_locked`); otherwise the seller enters it.

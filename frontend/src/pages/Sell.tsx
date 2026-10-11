@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button"
 import { api, ApiError } from "@/lib/api"
 
 const MAX_BYTES = 10 * 1024 * 1024
+// The server checks the real file contents; this is only a quick early check.
+const ACCEPTED_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp"]
+const ACCEPTED_EXTENSIONS = [".pdf", ".jpg", ".jpeg", ".png", ".webp"]
 
 export function Sell() {
   const navigate = useNavigate()
@@ -20,9 +23,10 @@ export function Sell() {
   async function handleFile(file: File | undefined) {
     if (!file) return
     setError(null)
-    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
-    if (!isPdf) return setError("Please upload your ticket as a PDF.")
-    if (file.size > MAX_BYTES) return setError("That file is over 10 MB. Upload the original ticket PDF.")
+    const name = file.name.toLowerCase()
+    const accepted = ACCEPTED_TYPES.includes(file.type) || ACCEPTED_EXTENSIONS.some((ext) => name.endsWith(ext))
+    if (!accepted) return setError("Upload your ticket as a PDF, or a photo or screenshot (JPG, PNG or WebP).")
+    if (file.size > MAX_BYTES) return setError("That file is over 10 MB. Upload the original ticket or a smaller photo.")
 
     setUploading(file.name)
     try {
@@ -48,7 +52,8 @@ export function Sell() {
       <div className="mb-6 space-y-2">
         <h1 className="font-heading text-3xl font-semibold tracking-tight">Sell a ticket</h1>
         <p className="text-muted-foreground">
-          Upload the PDF you received from the organiser. We read the event details from it, then you set your price.
+          Upload the PDF you received from the organiser, or a clear photo or screenshot of the ticket. We read the
+          event details from it, then you set your price.
         </p>
       </div>
 
@@ -86,23 +91,24 @@ export function Sell() {
             <FileUp className="size-6" />
           </div>
           <div>
-            <p className="font-medium">Drag your ticket PDF here</p>
-            <p className="text-sm text-muted-foreground">PDF only, up to 10 MB</p>
+            <p className="font-medium">Drag your ticket here</p>
+            <p className="text-sm text-muted-foreground">PDF, JPG, PNG or WebP, up to 10 MB</p>
           </div>
           <Button onClick={() => inputRef.current?.click()}>Choose file</Button>
           <input
             ref={inputRef}
             type="file"
-            accept="application/pdf,.pdf"
+            accept={[...ACCEPTED_TYPES, ...ACCEPTED_EXTENSIONS].join(",")}
             className="sr-only"
             onChange={(e) => handleFile(e.target.files?.[0])}
-            aria-label="Ticket PDF"
+            aria-label="Ticket file"
           />
         </div>
       )}
 
       <ul className="mt-6 space-y-1 text-sm text-muted-foreground">
-        <li>· Your PDF is stored privately and only sent to the buyer after they pay.</li>
+        <li>· Your ticket is stored privately and only sent to the buyer after they pay.</li>
+        <li>· For photos, make sure the whole ticket and its barcode are sharp and in frame. Location data is removed.</li>
         <li>· Each ticket can only be listed once.</li>
         <li>· You can ask at most 120% of the price printed on the ticket.</li>
       </ul>

@@ -5,3 +5,4 @@ gunicorn
 anthropic>=1.13,<2
 boto3>=1.43,<2
 pypdf>=6.20,<7
+pillow>=12.3,<13

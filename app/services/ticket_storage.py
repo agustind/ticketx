@@ -1,4 +1,4 @@
-"""Private storage for ticket PDFs. A ticket PDF is the ticket, so nothing here is public."""
+"""Private storage for ticket files. The file is the ticket, so nothing here is public."""
 import os
 
 from masonite.configuration import config
@@ -10,10 +10,10 @@ class TicketStorage:
         self.bucket = config("tickets.bucket")
         self._client = None
 
-    def put(self, key, content):
+    def put(self, key, content, content_type):
         if self.bucket:
             self._s3().put_object(
-                Bucket=self.bucket, Key=key, Body=content, ContentType="application/pdf"
+                Bucket=self.bucket, Key=key, Body=content, ContentType=content_type
             )
             return
         path = self._local_path(key)

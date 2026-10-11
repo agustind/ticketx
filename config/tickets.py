@@ -1,7 +1,7 @@
-"""Ticket marketplace config: PDF storage and ticket reading."""
+"""Ticket marketplace config: ticket file storage and ticket reading."""
 from masonite.environment import env
 
-# Private object storage for ticket PDFs. When TICKETS_BUCKET is unset (local dev),
+# Private object storage for ticket files (PDFs and images). When TICKETS_BUCKET is unset (local dev),
 # PDFs are written to storage/private/tickets instead.
 BUCKET = env("TICKETS_BUCKET", None)
 BUCKET_ENDPOINT = env("TICKETS_BUCKET_ENDPOINT", None)
@@ -13,6 +13,8 @@ BUCKET_SECRET_ACCESS_KEY = env("TICKETS_BUCKET_SECRET_ACCESS_KEY", None)
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY", None)
 READER_MODEL = env("TICKET_READER_MODEL", "claude-opus-5-5")
 
-MAX_PDF_BYTES = 10 * 1024 * 1024
+MAX_FILE_BYTES = 10 * 1024 * 1024
 MAX_PDF_PAGES = 10
+# Guards against decompression bombs (tiny files that expand to huge images).
+MAX_IMAGE_PIXELS = 40_000_000
 UPLOADS_PER_HOUR = 20

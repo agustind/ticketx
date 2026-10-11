@@ -14,7 +14,7 @@ ROUTES = [
     Route.get("/api/listings/@id", "ListingsController@show"),
     Route.post("/api/listings/@id/publish", "ListingsController@publish"),
     Route.delete("/api/listings/@id", "ListingsController@destroy"),
-    Route.get("/api/listings/@id/pdf", "ListingsController@pdf"),
+    Route.get("/api/listings/@id/file", "ListingsController@file"),
     Route.get("/api/me/listings", "ListingsController@mine"),
     Route.post("/api/orders", "OrdersController@store"),
     Route.get("/api/orders/@id", "OrdersController@show"),

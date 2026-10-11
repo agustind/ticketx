@@ -1,4 +1,4 @@
-import { FileText, Tag } from "lucide-react"
+import { FileText, Image, Tag } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Link } from "react-router"
 import { toast } from "sonner"
@@ -83,7 +83,9 @@ export function MyListings() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Button asChild variant="outline" size="sm">
-                      <a href={urls.listingPdf(listing.id)} target="_blank" rel="noreferrer"><FileText /> PDF</a>
+                      <a href={urls.listingFile(listing.id)} target="_blank" rel="noreferrer">
+                        {listing.file_type === "application/pdf" ? <FileText /> : <Image />} View ticket
+                      </a>
                     </Button>
                     {listing.status === "draft" && (
                       <Button asChild size="sm"><Link to={`/sell/${listing.id}`}>Continue</Link></Button>

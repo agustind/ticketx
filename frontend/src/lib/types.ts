@@ -27,6 +27,7 @@ export type Listing = {
   price_cents: number | null
   max_price_cents: number | null
   currency: string
+  file_type: "application/pdf" | "image/jpeg" | "image/png" | "image/webp"
   seller_name: string
   is_mine: boolean
   created_at: string
