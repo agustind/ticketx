@@ -1,7 +1,7 @@
 // Railway infrastructure for ticketex. Preview with `railway config plan`,
 // apply with `railway config apply`. Anything removed from this file is
 // deleted from Railway on the next apply.
-import { defineRailway, github, postgres, project, service } from "railway/iac";
+import { defineRailway, github, postgres, preserve, project, service } from "railway/iac";
 
 export default defineRailway((ctx) => {
   // Amsterdam; keep the app next to its database.
@@ -16,13 +16,17 @@ export default defineRailway((ctx) => {
     healthcheck: "/health",
     healthcheckTimeout: 60,
     regions: { [region]: 1 },
+    // Railway-generated public domain; APP_URL below resolves to it.
+    networking: { serviceDomains: { "ticketex-production.up.railway.app": {} } },
     env: {
       APP_NAME: "ticketex",
       APP_ENV: ctx.environment,
       APP_DEBUG: "False",
       APP_URL: "https://${{RAILWAY_PUBLIC_DOMAIN}}",
-      // Secret: set once as a shared variable, never stored in this file.
-      APP_KEY: ctx.shared.APP_KEY,
+      // Secret: value lives only in Railway. Set it with
+      //   python craft key --dont-store | <extract key> | railway variable set APP_KEY --stdin -s web
+      // preserve() keeps whatever Railway holds; never put the value here.
+      APP_KEY: preserve(),
       DB_CONNECTION: "postgres",
       DATABASE_URL: db.env.DATABASE_URL,
       DB_LOG: "False",
