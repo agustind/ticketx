@@ -1,0 +1,23 @@
+{% extends 'tickets/layout.html' %}
+{% block title %}Tickets{% endblock %}
+{% block content %}
+<header>
+    <h1>Tickets</h1>
+    <a class="btn" href="/tickets/create">New ticket</a>
+</header>
+
+<div class="card">
+    {% if tickets.count() %}
+    <ul class="list">
+        {% for ticket in tickets %}
+        <li>
+            <a href="/tickets/{{ ticket.id }}">#{{ ticket.id }} · {{ ticket.title }}</a>
+            <span class="status {{ ticket.status }}">{{ ticket.status|replace('_', ' ') }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">No tickets yet. <a href="/tickets/create">Create the first one.</a></p>
+    {% endif %}
+</div>
+{% endblock %}
